@@ -82,8 +82,12 @@ export class TabbedCard extends LitElement {
   protected willUpdate(
     _changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>,
   ): void {
-    if (_changedProperties.has("_helpers")) {
-      this._createTabs(this._config);
+    // TRIGGER: Rebuild if helpers load OR if the configuration updates
+    if (_changedProperties.has("_helpers") || _changedProperties.has("_config")) {
+      // Ensure both exist and that tabs are present before creating
+      if (this._helpers && this._config && this._config.tabs) {
+        this._createTabs(this._config);
+      }
     }
     if (_changedProperties.has("hass") && this._tabs?.length) {
       this._tabs.forEach((tab) => (tab.card.hass = this.hass));
@@ -91,6 +95,12 @@ export class TabbedCard extends LitElement {
   }
 
   async _createTabs(config: TabbedCardConfig) {
+    // Add this safety block at the top
+    if (!config || !Array.isArray(config.tabs) || config.tabs.length === 0) {
+      this._tabs = [];
+      return;
+    }
+
     const template = config?.options?.defaultTabIndex;
     if (typeof template === "undefined") {
       this.selectedTabIndex = 0;
